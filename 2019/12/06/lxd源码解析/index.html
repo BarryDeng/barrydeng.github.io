@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Barry Deng">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Barry Deng">
+    
+    <meta name="keywords" content="hexo,barrydeng,hexo-blog">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>Lxd 源码解析 · Sa1ka&#39;s Shelter</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Sa1ka&#39;s Shelter</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">Lxd 源码解析</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Sa1ka's Shelter</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            Lxd 源码解析
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">4.8k</span>Reading time: <span class="post-count reading-time">23 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/12/06</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <p>工作中忙的项目和lxd打交道比较多，因此我利用闲暇时间阅读了一下lxd的源码，以加深对于lxd的理解，顺便学习一些写golang的技巧。</p>
+<h2 id="关于lxd"><a href="#关于lxd" class="headerlink" title="关于lxd"></a>关于lxd</h2><p>lxd是lxc的第二版，和docker类似，也是一个利用Linux容器的管理工具。Linux容器可以实现一个类似与Linux虚拟机类似的环境，不同点是，牺牲了一定的隔离性的情况下运行开销更低。</p>
+<p>而lxd相较于lxc来说，相当于在管理方式上进行了一层封装。lxc的配置文件完全依赖人工编写，支持的存储后端只有dir（也就是在原有系统存储中的目录），网络的管理方式也非常匮乏，基本上只能使用手动配合外部工具才能有效地利用容器。而lxd，也就是官方所说的2.0，在众多方面都做出了改进。</p>
+<ol>
+<li>全新的C/S架构。客户端为一个名字叫lxc的工具（注意这个和原先那个lxc不是一个东西），服务端叫lxd，两者之间可以使用unix socket或者https的方式，通过RESTful API进行通信。这种设计让用户可以利用lxc工具对多个lxd进行远程管理，更重要的是，第三方程序也可以完全不依赖与lxc工具，直接使用API对lxd进行管理。相比lxc而言这种管理方式灵活了许多。</li>
+<li>更方便的配置项。lxd提出了许多的新概念，可以让lxc容器的配置显得更加条理化。例如，lxd引入了镜像库，镜像库可以是在本地也可以在远程，支持镜像在两者之间的转移、导出、导入，也可以将停止运行的容器打包为镜像；lxd引入了profile的概念，profile在容器创建时被指定，而基于同一个profile的容器在初始化时具有同样的配置参数。</li>
+<li>更加丰富的存储后端。lxd除了原有的dir类型外，还支持一些现代的高效存储后端，例如btrfs、zfs、ceph等，只需要在启用时安装配套工具即可。</li>
+<li>原生的网络配置。单个容器能够发挥的功能十分有限，如何将多个容器进行连接是非常关键的。lxd直接融合了多种网络的配置功能，例如创建bridge、ovs、veth，以及overlay类型的接口GRE、Vxlan以及Ubuntu fan等等。</li>
+<li>更加方便的设备管理。对于宿主机上的物理资源，lxd也直接提供了device的配置方法，用户可以按照需求直接将多种类型的设备绑定到容器中，例如GPU、物理网络接口、磁盘、infiniteband以及其他的字符型设备和块设备等。</li>
+<li>自带的集群模式。可以将多个运行lxd的服务器组合为集群进行管理，数据一致性由raft保证，这样可以提高lxd的稳定性。</li>
+</ol>
+<p>此外，lxd还提供了容器的迁移，并且在保证这些特性的同时，原有的lxc配置参数在lxd中得以保留。可以说，lxd的出现极大地提高了用户管理lxc的灵活度。</p>
+<h2 id="lxc"><a href="#lxc" class="headerlink" title="lxc"></a>lxc</h2><p>这里的lxc特指lxd的客户端，在lxd源码中的位置是<a href="https://github.com/lxc/lxd/lxc" target="_blank" rel="noopener">lxc</a>。这里额外提一下，在lxd（也就是lxc 2.0）中，一般使用的工具是<code>lxc</code>，运行的命令一般是<code>lxc start</code>、<code>lxc stop</code>等等；而在lxc（也就是lxc 1.0）中，一般使用的工具是<code>lxc-***</code>，运行的命令一般是<code>lxc-start</code>、<code>lxc-stop</code>。由于这里<code>lxc</code>经常出现，注意区分不要弄错了。</p>
+<table>
+<thead>
+<tr>
+<th align="center">系统</th>
+<th align="center">服务名</th>
+<th align="center">开启容器的命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">lxc</td>
+<td align="center">lxc</td>
+<td align="center">lxc-start</td>
+</tr>
+<tr>
+<td align="center">lxd</td>
+<td align="center">lxd</td>
+<td align="center">lxc start</td>
+</tr>
+</tbody></table>
+<p>golang的程序一般是从包中的<code>main</code>函数开始的，因此这里首先看<code>lxc/main.go</code>文件。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 定位配置文件，从配置文件中获得一些预制的运行参数</span></span><br><span class="line">    err := execIfAliases()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Fprintf(os.Stderr, <span class="string">"Error: %v\n"</span>, err)</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 配置解析器</span></span><br><span class="line">	app := &amp;cobra.Command&#123;&#125;</span><br><span class="line">	app.Use = <span class="string">"lxc"</span></span><br><span class="line">	app.Short = i18n.G(<span class="string">"Command line client for LXD"</span>)</span><br><span class="line">	app.Long = cli.FormatSection(i18n.G(<span class="string">"Description"</span>), i18n.G(</span><br><span class="line">		<span class="string">`Command line client for LXD</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">All of LXD's features can be driven through the various commands below.</span></span><br><span class="line"><span class="string">For help with any of those, simply call them with --help.`</span>))</span><br><span class="line">	app.SilenceUsage = <span class="literal">true</span></span><br><span class="line">	app.SilenceErrors = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Global flags</span></span><br><span class="line">    globalCmd := cmdGlobal&#123;cmd: app&#125;</span><br><span class="line">    <span class="comment">// 添加全局对象的处理逻辑</span></span><br><span class="line">	app.PersistentFlags().BoolVar(&amp;globalCmd.flagVersion, <span class="string">"version"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Print version number"</span>))</span><br><span class="line">	app.PersistentFlags().BoolVarP(&amp;globalCmd.flagHelp, <span class="string">"help"</span>, <span class="string">"h"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Print help"</span>))</span><br><span class="line">	app.PersistentFlags().BoolVar(&amp;globalCmd.flagForceLocal, <span class="string">"force-local"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Force using the local unix socket"</span>))</span><br><span class="line">	app.PersistentFlags().StringVar(&amp;globalCmd.flagProject, <span class="string">"project"</span>, <span class="string">""</span>, i18n.G(<span class="string">"Override the source project"</span>))</span><br><span class="line">	app.PersistentFlags().BoolVar(&amp;globalCmd.flagLogDebug, <span class="string">"debug"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Show all debug messages"</span>))</span><br><span class="line">	app.PersistentFlags().BoolVarP(&amp;globalCmd.flagLogVerbose, <span class="string">"verbose"</span>, <span class="string">"v"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Show all information messages"</span>))</span><br><span class="line">	app.PersistentFlags().BoolVarP(&amp;globalCmd.flagQuiet, <span class="string">"quiet"</span>, <span class="string">"q"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Don't show progress information"</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Wrappers</span></span><br><span class="line">    <span class="comment">// 配置运行前后的钩子函数</span></span><br><span class="line">	app.PersistentPreRunE = globalCmd.PreRun</span><br><span class="line">	app.PersistentPostRunE = globalCmd.PostRun</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Version handling</span></span><br><span class="line">	app.SetVersionTemplate(<span class="string">"&#123;&#123;.Version&#125;&#125;\n"</span>)</span><br><span class="line">	app.Version = version.Version</span><br><span class="line"></span><br><span class="line">	<span class="comment">// alias sub-command</span></span><br><span class="line">	aliasCmd := cmdAlias&#123;global: &amp;globalCmd&#125;</span><br><span class="line">	app.AddCommand(aliasCmd.Command())</span><br><span class="line"></span><br><span class="line">	<span class="comment">// cluster sub-command</span></span><br><span class="line">	clusterCmd := cmdCluster&#123;global: &amp;globalCmd&#125;</span><br><span class="line">	app.AddCommand(clusterCmd.Command())</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... 中间这部分和alias，cluster一样，都是在绑定子命令的入口</span></span><br><span class="line">    </span><br><span class="line">	<span class="comment">// version sub-command</span></span><br><span class="line">	versionCmd := cmdVersion&#123;global: &amp;globalCmd&#125;</span><br><span class="line">	app.AddCommand(versionCmd.Command())</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Get help command</span></span><br><span class="line">	app.InitDefaultHelpCmd()</span><br><span class="line">	<span class="keyword">var</span> help *cobra.Command</span><br><span class="line">	<span class="keyword">for</span> _, cmd := <span class="keyword">range</span> app.Commands() &#123;</span><br><span class="line">		<span class="keyword">if</span> cmd.Name() == <span class="string">"help"</span> &#123;</span><br><span class="line">			help = cmd</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Help flags</span></span><br><span class="line">	app.Flags().BoolVar(&amp;globalCmd.flagHelpAll, <span class="string">"all"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Show less common commands"</span>))</span><br><span class="line">	help.Flags().BoolVar(&amp;globalCmd.flagHelpAll, <span class="string">"all"</span>, <span class="literal">false</span>, i18n.G(<span class="string">"Show less common commands"</span>))</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Deal with --all flag</span></span><br><span class="line">	err = app.ParseFlags(os.Args[<span class="number">1</span>:])</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> globalCmd.flagHelpAll &#123;</span><br><span class="line">			<span class="comment">// Show all commands</span></span><br><span class="line">			<span class="keyword">for</span> _, cmd := <span class="keyword">range</span> app.Commands() &#123;</span><br><span class="line">				cmd.Hidden = <span class="literal">false</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Run the main command and handle errors</span></span><br><span class="line">	err = app.Execute()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="comment">// Handle non-Linux systems</span></span><br><span class="line">		<span class="keyword">if</span> err == config.ErrNotLinux &#123;</span><br><span class="line">			fmt.Fprintf(os.Stderr, i18n.G(<span class="string">`This client hasn't been configured to use a remote LXD server yet.</span></span><br><span class="line"><span class="string">As your platform can't run native Linux containers, you must connect to a remote LXD server.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">If you already added a remote server, make it the default with "lxc remote switch NAME".</span></span><br><span class="line"><span class="string">To easily setup a local LXD server in a virtual machine, consider using: https://multipass.run`</span>)+<span class="string">"\n"</span>)</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> err == cobra.ErrSubCommandRequired &#123;</span><br><span class="line">			os.Exit(<span class="number">0</span>)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Default error handling</span></span><br><span class="line">		fmt.Fprintf(os.Stderr, <span class="string">"Error: %v\n"</span>, err)</span><br><span class="line">		os.Exit(<span class="number">1</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> globalCmd.ret != <span class="number">0</span> &#123;</span><br><span class="line">		os.Exit(globalCmd.ret)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>根据我的使用经验，lxc这个客户端是唯一一个能够与交换机终端媲美的一个客户端程序。我们都知道很多有众多命令参数的程序如果不阅读手册是完全没法使用的，而lxc无论在任何时候子命令状态下，都可以通过不敲后面的参数来获取帮助，而且说明信息非常的详细，只有在某些特定的参数单位不太清楚时才需要查阅手册。这部分源码可以说是显示出它神奇的奥秘。原来，lxc使用了一个名字叫<a href="https://github.com/spf13/cobra" target="_blank" rel="noopener">cobra</a>的库，这个库可以对命令行参数进行非常华丽的处理。这段逻辑中我们唯独需要关注的，就是一开头的<code>execIfAliases</code>，这个函数主要就是定位lxd使用的<code>config.yml</code>文件，然后从文件中读取配置信息，填充到全局使用的结构体<code>cmdGlobal</code>中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> cmdGlobal <span class="keyword">struct</span> &#123;</span><br><span class="line">	conf     *config.Config</span><br><span class="line">	confPath <span class="keyword">string</span></span><br><span class="line">	cmd      *cobra.Command</span><br><span class="line">	ret      <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line">	flagForceLocal <span class="keyword">bool</span></span><br><span class="line">	flagHelp       <span class="keyword">bool</span></span><br><span class="line">	flagHelpAll    <span class="keyword">bool</span></span><br><span class="line">	flagLogDebug   <span class="keyword">bool</span></span><br><span class="line">	flagLogVerbose <span class="keyword">bool</span></span><br><span class="line">	flagProject    <span class="keyword">string</span></span><br><span class="line">	flagQuiet      <span class="keyword">bool</span></span><br><span class="line">	flagVersion    <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解析配置文件的逻辑在<code>lxc/config</code>目录下，入口点是<code>file.go</code>文件中的<code>LoadConfig</code>函数。值得一提的是，lxc工具还支持命令的简写，通过源码我们可以发现只需要用<code>lxc alias</code>工具管理一个alias的键值映射即可。</p>
+<p>这里我们深入分析一下，lxc是如何将config作为一个全局变量进行传递的。以刚才提到的<code>alias</code>命令为例，在添加子命令的时候<code>main.go</code>中的有这样的代码。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">   <span class="comment">// alias sub-command</span></span><br><span class="line">aliasCmd := cmdAlias&#123;global: &amp;globalCmd&#125;</span><br><span class="line">app.AddCommand(aliasCmd.Command())</span><br></pre></td></tr></table></figure>
+
+<p><code>cmdAlias</code>是在<code>alias.go</code>中的一个结构体，结构中包括一个名叫<code>global</code>的<code>cmdGlobal</code>对象，此外还有<code>Command</code>函数。添加子命令时程序先将<code>globalCmd</code>传递到<code>cmdAlias</code>中，再将<code>Command</code>函数注册到<code>alias</code>子命令的映射中，这样比较巧妙地将全局参数传递到了<code>alias</code>子命令中。</p>
+<p>当完成了参数解析后，具体的执行逻辑将会转移到各个子命令的<code>Command</code>函数中，我们这里挑选最常见的<code>launch</code>命令，完整地来看一次容器的创建流程。</p>
+<p>首先，我们假定运行的命令为<code>lxc launch ubuntu:16.04 u1</code>，看看这条命令在<code>launch.go</code>是如何处理的。<br>首先，我们发现<code>cmdLaunch</code>这个结构体与其他文件有一定的差异。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> cmdLaunch <span class="keyword">struct</span> &#123;</span><br><span class="line">	global *cmdGlobal</span><br><span class="line">	init   *cmdInit</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看见了吗，多了一个<code>cmdInit</code>对象。不难发现这个对象就是<code>init.go</code>中的对象，结合launch的具体过程我们可以想象，<code>launch.go</code>中可能是分两步执行launch过程，首先是<code>lxc init ubuntu:16.04 u1</code>，接下来<code>lxc start u1</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *cmdLaunch)</span> <span class="title">Command</span><span class="params">()</span> *<span class="title">cobra</span>.<span class="title">Command</span></span> &#123;</span><br><span class="line">	cmd := c.init.Command()</span><br><span class="line">	cmd.Use = i18n.G(<span class="string">"launch [&lt;remote&gt;:]&lt;image&gt; [&lt;remote&gt;:][&lt;name&gt;]"</span>)</span><br><span class="line">	cmd.Short = i18n.G(<span class="string">"Create and start containers from images"</span>)</span><br><span class="line">	cmd.Long = cli.FormatSection(i18n.G(<span class="string">"Description"</span>), i18n.G(</span><br><span class="line">		<span class="string">`Create and start containers from images`</span>))</span><br><span class="line">	cmd.Example = cli.FormatSection(<span class="string">""</span>, i18n.G(</span><br><span class="line">		<span class="string">`lxc launch ubuntu:16.04 u1</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">lxc launch ubuntu:16.04 u1 &lt; config.yaml</span></span><br><span class="line"><span class="string">    Create and start the container with configuration from config.yaml`</span>))</span><br><span class="line">	cmd.Hidden = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">	cmd.RunE = c.Run</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> cmd</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>源码中我们可以发现果然情况如此，<code>launch.go</code>的注册直接复用了<code>init.go</code>，只是将描述信息和运行函数进行了复写，这样可以将一些init的逻辑直接复用。我们定位到运行函数<code>Run</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *cmdLaunch)</span> <span class="title">Run</span><span class="params">(cmd *cobra.Command, args []<span class="keyword">string</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	conf := c.global.conf</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Sanity checks</span></span><br><span class="line">	exit, err := c.global.CheckArgs(cmd, args, <span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">	<span class="keyword">if</span> exit &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Call the matching code from init</span></span><br><span class="line">	d, name, err := c.init.create(conf, args)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Get the remote</span></span><br><span class="line">	<span class="keyword">var</span> remote <span class="keyword">string</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(args) == <span class="number">2</span> &#123;</span><br><span class="line">		remote, _, err = conf.ParseRemote(args[<span class="number">1</span>])</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		remote, _, err = conf.ParseRemote(<span class="string">""</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Start the container</span></span><br><span class="line">	<span class="keyword">if</span> !c.global.flagQuiet &#123;</span><br><span class="line">		fmt.Printf(i18n.G(<span class="string">"Starting %s"</span>)+<span class="string">"\n"</span>, name)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	req := api.InstanceStatePut&#123;</span><br><span class="line">		Action:  <span class="string">"start"</span>,</span><br><span class="line">		Timeout: <span class="number">-1</span>,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	op, err := d.UpdateInstanceState(name, req, <span class="string">""</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	progress := utils.ProgressRenderer&#123;</span><br><span class="line">		Quiet: c.global.flagQuiet,</span><br><span class="line">	&#125;</span><br><span class="line">	_, err = op.AddHandler(progress.UpdateOp)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		progress.Done(<span class="string">""</span>)</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Wait for operation to finish</span></span><br><span class="line">	err = utils.CancelableWait(op, &amp;progress)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		progress.Done(<span class="string">""</span>)</span><br><span class="line">		prettyName := name</span><br><span class="line">		<span class="keyword">if</span> remote != <span class="string">""</span> &#123;</span><br><span class="line">			prettyName = fmt.Sprintf(<span class="string">"%s:%s"</span>, remote, name)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> fmt.Errorf(<span class="string">"%s\n"</span>+i18n.G(<span class="string">"Try `lxc info --show-log %s` for more info"</span>), err, prettyName)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	progress.Done(<span class="string">""</span>)</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段逻辑中除了输出显示的部分外，首先检查了一下参数数量和类型，接下来调用init逻辑中的<code>create</code>函数，接下来解析remote参数，然后构造了一个请求，针对该请求注册一个回调函数，最后执行同步性请求。那么这个部分中我们首先会关注<code>init.go</code>的<code>create</code>函数。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *cmdInit)</span> <span class="title">create</span><span class="params">(conf *config.Config, args []<span class="keyword">string</span>)</span> <span class="params">(lxd.InstanceServer, <span class="keyword">string</span>, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> name <span class="keyword">string</span></span><br><span class="line">	<span class="keyword">var</span> image <span class="keyword">string</span></span><br><span class="line">	<span class="keyword">var</span> remote <span class="keyword">string</span></span><br><span class="line">	<span class="keyword">var</span> iremote <span class="keyword">string</span></span><br><span class="line">	<span class="keyword">var</span> err error</span><br><span class="line">	<span class="keyword">var</span> stdinData api.InstancePut</span><br><span class="line">	<span class="keyword">var</span> devicesMap <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span></span><br><span class="line">	<span class="keyword">var</span> configMap <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// If stdin isn't a terminal, read text from it</span></span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(args) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// ... 指定的是remote:container的容器，解析出remote</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> c.flagEmpty &#123;</span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(args) &gt; <span class="number">1</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, fmt.Errorf(i18n.G(<span class="string">"--empty cannot be combined with an image name"</span>))</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(args) == <span class="number">0</span> &#123;</span><br><span class="line">			remote, name, err = conf.ParseRemote(<span class="string">""</span>)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="built_in">len</span>(args) == <span class="number">1</span> &#123;</span><br><span class="line">			<span class="comment">// Switch image / container names</span></span><br><span class="line">			name = image</span><br><span class="line">			remote = iremote</span><br><span class="line">			image = <span class="string">""</span></span><br><span class="line">			iremote = <span class="string">""</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	d, err := conf.GetInstanceServer(remote)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> c.flagTarget != <span class="string">""</span> &#123;</span><br><span class="line">		d = d.UseTarget(c.flagTarget)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	profiles := []<span class="keyword">string</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">for</span> _, p := <span class="keyword">range</span> c.flagProfile &#123;</span><br><span class="line">		profiles = <span class="built_in">append</span>(profiles, p)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 打印开始创建的信息</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(stdinData.Devices) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		devicesMap = stdinData.Devices</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		devicesMap = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> c.flagNetwork != <span class="string">""</span> &#123;</span><br><span class="line">		network, _, err := d.GetNetwork(c.flagNetwork)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> network.Type == <span class="string">"bridge"</span> &#123;</span><br><span class="line">			devicesMap[c.flagNetwork] = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;<span class="string">"type"</span>: <span class="string">"nic"</span>, <span class="string">"nictype"</span>: <span class="string">"bridged"</span>, <span class="string">"parent"</span>: c.flagNetwork&#125;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			devicesMap[c.flagNetwork] = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;<span class="string">"type"</span>: <span class="string">"nic"</span>, <span class="string">"nictype"</span>: <span class="string">"macvlan"</span>, <span class="string">"parent"</span>: c.flagNetwork&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(stdinData.Config) &gt; <span class="number">0</span> &#123;</span><br><span class="line">		configMap = stdinData.Config</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		configMap = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> _, entry := <span class="keyword">range</span> c.flagConfig &#123;</span><br><span class="line">		<span class="keyword">if</span> !strings.Contains(entry, <span class="string">"="</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, fmt.Errorf(i18n.G(<span class="string">"Bad key=value pair: %s"</span>), entry)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		fields := strings.SplitN(entry, <span class="string">"="</span>, <span class="number">2</span>)</span><br><span class="line">		configMap[fields[<span class="number">0</span>]] = fields[<span class="number">1</span>]</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Check if the specified storage pool exists.</span></span><br><span class="line">	<span class="keyword">if</span> c.flagStorage != <span class="string">""</span> &#123;</span><br><span class="line">		_, _, err := d.GetStoragePool(c.flagStorage)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		devicesMap[<span class="string">"root"</span>] = <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;</span><br><span class="line">			<span class="string">"type"</span>: <span class="string">"disk"</span>,</span><br><span class="line">			<span class="string">"path"</span>: <span class="string">"/"</span>,</span><br><span class="line">			<span class="string">"pool"</span>: c.flagStorage,</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Decide whether we are creating a container or a virtual machine.</span></span><br><span class="line">	instanceDBType := api.InstanceTypeContainer</span><br><span class="line">	<span class="keyword">if</span> c.flagVM &#123;</span><br><span class="line">		instanceDBType = api.InstanceTypeVM</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Setup instance creation request</span></span><br><span class="line">	req := api.InstancesPost&#123;</span><br><span class="line">		Name:         name,</span><br><span class="line">		InstanceType: c.flagType,</span><br><span class="line">		Type:         instanceDBType,</span><br><span class="line">	&#125;</span><br><span class="line">	req.Config = configMap</span><br><span class="line">	req.Devices = devicesMap</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> !c.flagNoProfiles &amp;&amp; <span class="built_in">len</span>(profiles) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">if</span> <span class="built_in">len</span>(stdinData.Profiles) &gt; <span class="number">0</span> &#123;</span><br><span class="line">			req.Profiles = stdinData.Profiles</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			req.Profiles = <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		req.Profiles = profiles</span><br><span class="line">	&#125;</span><br><span class="line">	req.Ephemeral = c.flagEphemeral</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> opInfo api.Operation</span><br><span class="line">	<span class="keyword">if</span> !c.flagEmpty &#123;</span><br><span class="line">		<span class="comment">// Get the image server and image info</span></span><br><span class="line">		iremote, image = c.guessImage(conf, d, remote, iremote, image)</span><br><span class="line">		<span class="keyword">var</span> imgRemote lxd.ImageServer</span><br><span class="line">		<span class="keyword">var</span> imgInfo *api.Image</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Connect to the image server</span></span><br><span class="line">		<span class="keyword">if</span> iremote == remote &#123;</span><br><span class="line">			imgRemote = d</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			imgRemote, err = conf.GetImageServer(iremote)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Deal with the default image</span></span><br><span class="line">		<span class="keyword">if</span> image == <span class="string">""</span> &#123;</span><br><span class="line">			image = <span class="string">"default"</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Optimisation for simplestreams</span></span><br><span class="line">		<span class="keyword">if</span> conf.Remotes[iremote].Protocol == <span class="string">"simplestreams"</span> &#123;</span><br><span class="line">			imgInfo = &amp;api.Image&#123;&#125;</span><br><span class="line">			imgInfo.Fingerprint = image</span><br><span class="line">			imgInfo.Public = <span class="literal">true</span></span><br><span class="line">			req.Source.Alias = image</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// Attempt to resolve an image alias</span></span><br><span class="line">			alias, _, err := imgRemote.GetImageAlias(image)</span><br><span class="line">			<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">				req.Source.Alias = image</span><br><span class="line">				image = alias.Target</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get the image info</span></span><br><span class="line">			imgInfo, _, err = imgRemote.GetImage(image)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Create the instance</span></span><br><span class="line">		op, err := d.CreateInstanceFromImage(imgRemote, *imgInfo, req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Watch the background operation</span></span><br><span class="line">		progress := utils.ProgressRenderer&#123;</span><br><span class="line">			Format: i18n.G(<span class="string">"Retrieving image: %s"</span>),</span><br><span class="line">			Quiet:  c.global.flagQuiet,</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		_, err = op.AddHandler(progress.UpdateOp)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			progress.Done(<span class="string">""</span>)</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		err = utils.CancelableWait(op, &amp;progress)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			progress.Done(<span class="string">""</span>)</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line">		progress.Done(<span class="string">""</span>)</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Extract the container name</span></span><br><span class="line">		info, err := op.GetTarget()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		opInfo = *info</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		req.Source.Type = <span class="string">"none"</span></span><br><span class="line"></span><br><span class="line">		op, err := d.CreateInstance(req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		err = op.Wait()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		opInfo = op.Get()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	instances, ok := opInfo.Resources[<span class="string">"instances"</span>]</span><br><span class="line">	<span class="keyword">if</span> !ok || <span class="built_in">len</span>(instances) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// Try using the older "containers" field</span></span><br><span class="line">		instances, ok = opInfo.Resources[<span class="string">"containers"</span>]</span><br><span class="line">		<span class="keyword">if</span> !ok || <span class="built_in">len</span>(instances) == <span class="number">0</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, <span class="string">""</span>, fmt.Errorf(i18n.G(<span class="string">"Didn't get any affected image, instance or snapshot from server"</span>))</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(instances) == <span class="number">1</span> &amp;&amp; name == <span class="string">""</span> &#123;</span><br><span class="line">		fields := strings.Split(instances[<span class="number">0</span>], <span class="string">"/"</span>)</span><br><span class="line">		name = fields[<span class="built_in">len</span>(fields)<span class="number">-1</span>]</span><br><span class="line">		fmt.Printf(i18n.G(<span class="string">"Instance name is: %s"</span>)+<span class="string">"\n"</span>, name)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Validate the network setup</span></span><br><span class="line">	c.checkNetwork(d, name)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> d, name, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，这部分虽然代码很长，但是大部分逻辑都是在构造容器的config，如果用户没有指定参数的话使用什么默认参数，例如镜像、网络、存储池、profile等等。核心代码是使用<code>GetInstanceServer</code>命令得到了一个<code>InstanceServer</code>对象，构造参数时也会通过这个对象查询，最后使用该对象的<code>CreateInstanceFromImage</code>（无镜像时用<code>CreateInstance</code>生成容器。那么，这里我们看看<code>remote.go</code>中的<code>GetInstanceServer</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// GetInstanceServer returns a InstanceServer struct for the remote</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *Config)</span> <span class="title">GetInstanceServer</span><span class="params">(name <span class="keyword">string</span>)</span> <span class="params">(lxd.InstanceServer, error)</span></span> &#123;</span><br><span class="line">	<span class="comment">// Handle "local" on non-Linux</span></span><br><span class="line">	<span class="keyword">if</span> name == <span class="string">"local"</span> &amp;&amp; runtime.GOOS != <span class="string">"linux"</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, ErrNotLinux</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Get the remote</span></span><br><span class="line">	remote, ok := c.Remotes[name]</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"The remote \"%s\" doesn't exist"</span>, name)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Sanity checks</span></span><br><span class="line">	<span class="keyword">if</span> remote.Public || remote.Protocol == <span class="string">"simplestreams"</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"The remote isn't a private LXD server"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Get connection arguments</span></span><br><span class="line">	args, err := c.getConnectionArgs(name)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Unix socket</span></span><br><span class="line">	<span class="keyword">if</span> strings.HasPrefix(remote.Addr, <span class="string">"unix:"</span>) &#123;</span><br><span class="line">		d, err := lxd.ConnectLXDUnix(strings.TrimPrefix(strings.TrimPrefix(remote.Addr, <span class="string">"unix:"</span>), <span class="string">"//"</span>), args)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> remote.Project != <span class="string">""</span> &amp;&amp; remote.Project != <span class="string">"default"</span> &#123;</span><br><span class="line">			d = d.UseProject(remote.Project)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> c.ProjectOverride != <span class="string">""</span> &#123;</span><br><span class="line">			d = d.UseProject(c.ProjectOverride)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> d, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// HTTPs</span></span><br><span class="line">	<span class="keyword">if</span> remote.AuthType != <span class="string">"candid"</span> &amp;&amp; (args.TLSClientCert == <span class="string">""</span> || args.TLSClientKey == <span class="string">""</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"Missing TLS client certificate and key"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	d, err := lxd.ConnectLXD(remote.Addr, args)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> remote.Project != <span class="string">""</span> &amp;&amp; remote.Project != <span class="string">"default"</span> &#123;</span><br><span class="line">		d = d.UseProject(remote.Project)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> c.ProjectOverride != <span class="string">""</span> &#123;</span><br><span class="line">		d = d.UseProject(c.ProjectOverride)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> d, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>针对两种连接模式，该函数使用<code>lxd</code>包中的<code>ConnectLXDUnix</code>和<code>ConnectLXD</code>两个函数连接。值得注意的是，这里的<code>lxd</code>包<strong>并不是指的<code>lxd</code>这个目录</strong>，仔细看会发现这里的<code>lxd</code>包实际上在<code>client</code>这个目录下，而<code>lxd</code>目录下的包名实际上叫<code>main</code>。个人认为lxd在命名方面确实存在着很多的混淆点，除去lxd的命令行工具叫做lxc很可能与lxc 1.0让人产生误解，这里的包名稍不注意也会弄错。话说回来，这样我们知道了<code>client</code>这个目录下的代码应当是用来生成客户端向服务端发起的请求的。</p>
+<p>在<code>client/connect.go</code>中，我们找到了<code>ConnectLXD</code>函数。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ConnectLXD lets you connect to a remote LXD daemon over HTTPs.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// A client certificate (TLSClientCert) and key (TLSClientKey) must be provided.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// If connecting to a LXD daemon running in PKI mode, the PKI CA (TLSCA) must also be provided.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Unless the remote server is trusted by the system CA, the remote certificate must be provided (TLSServerCert).</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ConnectLXD</span><span class="params">(url <span class="keyword">string</span>, args *ConnectionArgs)</span> <span class="params">(InstanceServer, error)</span></span> &#123;</span><br><span class="line">	logger.Debugf(<span class="string">"Connecting to a remote LXD over HTTPs"</span>)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Cleanup URL</span></span><br><span class="line">	url = strings.TrimSuffix(url, <span class="string">"/"</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> httpsLXD(url, args)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Internal function called by ConnectLXD and ConnectPublicLXD</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">httpsLXD</span><span class="params">(url <span class="keyword">string</span>, args *ConnectionArgs)</span> <span class="params">(InstanceServer, error)</span></span> &#123;</span><br><span class="line">	<span class="comment">// Use empty args if not specified</span></span><br><span class="line">	<span class="keyword">if</span> args == <span class="literal">nil</span> &#123;</span><br><span class="line">		args = &amp;ConnectionArgs&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Initialize the client struct</span></span><br><span class="line">	server := ProtocolLXD&#123;</span><br><span class="line">		httpCertificate:  args.TLSServerCert,</span><br><span class="line">		httpHost:         url,</span><br><span class="line">		httpProtocol:     <span class="string">"https"</span>,</span><br><span class="line">		httpUserAgent:    args.UserAgent,</span><br><span class="line">		bakeryInteractor: args.AuthInteractor,</span><br><span class="line">		chConnected:      <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;, <span class="number">1</span>),</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> args.AuthType == <span class="string">"candid"</span> &#123;</span><br><span class="line">		server.RequireAuthenticated(<span class="literal">true</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Setup the HTTP client</span></span><br><span class="line">	httpClient, err := tlsHTTPClient(args.HTTPClient, args.TLSClientCert, args.TLSClientKey, args.TLSCA, args.TLSServerCert, args.InsecureSkipVerify, args.Proxy)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> args.CookieJar != <span class="literal">nil</span> &#123;</span><br><span class="line">		httpClient.Jar = args.CookieJar</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	server.http = httpClient</span><br><span class="line">	<span class="keyword">if</span> args.AuthType == <span class="string">"candid"</span> &#123;</span><br><span class="line">		server.setupBakeryClient()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Test the connection and seed the server information</span></span><br><span class="line">	<span class="keyword">if</span> !args.SkipGetServer &#123;</span><br><span class="line">		_, _, err := server.GetServer()</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> &amp;server, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而这里已经接近https请求发送的底层了，我们不再深入分析了，只是需要注意的是lxd使用的是位于<code>util.go</code>中几乎自己实现的<code>tlsHttpClient</code>，而不像我想象的那样使用了第三方的https请求库。至于<code>unix socket</code>部分和<code>https</code>请求类似。</p>
+<p>那么，在获取了这个<code>InstanceServer</code>后，程序使用了对象的<code>CreateInstanceFromImage</code>函数来创建容器。找到<code>interfaces.go</code>中的<code>InstanceServer</code>后我们发现这是一个接口，由<code>lxd.go</code>中的<code>ProtocolLXD</code>实现。我们来看看这个<code>CreateInstanceFromImage</code>函数（该函数实现在<code>lxd_instances.go</code>中）。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// CreateInstanceFromImage is a convenience function to make it easier to create a instance from an existing image.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *ProtocolLXD)</span> <span class="title">CreateInstanceFromImage</span><span class="params">(source ImageServer, image api.Image, req api.InstancesPost)</span> <span class="params">(RemoteOperation, error)</span></span> &#123;</span><br><span class="line">	<span class="comment">// Set the minimal source fields</span></span><br><span class="line">	req.Source.Type = <span class="string">"image"</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Optimization for the local image case</span></span><br><span class="line">	<span class="keyword">if</span> r == source &#123;</span><br><span class="line">		<span class="comment">// Always use fingerprints for local case</span></span><br><span class="line">		req.Source.Fingerprint = image.Fingerprint</span><br><span class="line">		req.Source.Alias = <span class="string">""</span></span><br><span class="line"></span><br><span class="line">		op, err := r.CreateInstance(req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		rop := remoteOperation&#123;</span><br><span class="line">			targetOp: op,</span><br><span class="line">			chDone:   <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">bool</span>),</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Forward targetOp to remote op</span></span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			rop.err = rop.targetOp.Wait()</span><br><span class="line">			<span class="built_in">close</span>(rop.chDone)</span><br><span class="line">		&#125;()</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> &amp;rop, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Minimal source fields for remote image</span></span><br><span class="line">	req.Source.Mode = <span class="string">"pull"</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// If we have an alias and the image is public, use that</span></span><br><span class="line">	<span class="keyword">if</span> req.Source.Alias != <span class="string">""</span> &amp;&amp; image.Public &#123;</span><br><span class="line">		req.Source.Fingerprint = <span class="string">""</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		req.Source.Fingerprint = image.Fingerprint</span><br><span class="line">		req.Source.Alias = <span class="string">""</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Get source server connection information</span></span><br><span class="line">	info, err := source.GetConnectionInfo()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	req.Source.Protocol = info.Protocol</span><br><span class="line">	req.Source.Certificate = info.Certificate</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Generate secret token if needed</span></span><br><span class="line">	<span class="keyword">if</span> !image.Public &#123;</span><br><span class="line">		secret, err := source.GetImageSecret(image.Fingerprint)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		req.Source.Secret = secret</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> r.tryCreateInstance(req, info.Addresses)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里简单的对镜像进行获取后，调用<code>tryCreateInstance</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *ProtocolLXD)</span> <span class="title">tryCreateInstance</span><span class="params">(req api.InstancesPost, urls []<span class="keyword">string</span>)</span> <span class="params">(RemoteOperation, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(urls) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"The source server isn't listening on the network"</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rop := remoteOperation&#123;</span><br><span class="line">		chDone: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">bool</span>),</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	operation := req.Source.Operation</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Forward targetOp to remote op</span></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		success := <span class="literal">false</span></span><br><span class="line">		errors := <span class="keyword">map</span>[<span class="keyword">string</span>]error&#123;&#125;</span><br><span class="line">		<span class="keyword">for</span> _, serverURL := <span class="keyword">range</span> urls &#123;</span><br><span class="line">			<span class="keyword">if</span> operation == <span class="string">""</span> &#123;</span><br><span class="line">				req.Source.Server = serverURL</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				req.Source.Operation = fmt.Sprintf(<span class="string">"%s/1.0/operations/%s"</span>, serverURL, url.PathEscape(operation))</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			op, err := r.CreateInstance(req)</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				errors[serverURL] = err</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			rop.targetOp = op</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> _, handler := <span class="keyword">range</span> rop.handlers &#123;</span><br><span class="line">				rop.targetOp.AddHandler(handler)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			err = rop.targetOp.Wait()</span><br><span class="line">			<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">				errors[serverURL] = err</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			success = <span class="literal">true</span></span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> !success &#123;</span><br><span class="line">			rop.err = remoteOperationError(<span class="string">"Failed instance creation"</span>, errors)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">close</span>(rop.chDone)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> &amp;rop, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里面涉及到了golang的并发实现<code>go func() {}()</code>，以建立一个异步的请求，并注册回调函数到rop中，在请求回复后执行。</p>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://barrydeng.github.io">Barry Deng</a>
+            <p>原文链接：<a href="http://barrydeng.github.io/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">http://barrydeng.github.io/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</a>
+            <p>发表日期：<a href="http://barrydeng.github.io/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">December 6th 2019, 10:34:28 am</a>
+            <p>更新日期：<a href="http://barrydeng.github.io/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">December 6th 2019, 10:34:28 am</a>
+            <p>版权声明：本文采用<a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2019/12/06/mininet/" title= "mininet 学习">
+                    <div class="nextTitle">mininet 学习</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" title= "org.onosproject.fwd 应用解析">
+                    <div class="prevTitle">org.onosproject.fwd 应用解析</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+    <div id="lv-container" data-id="city" data-uid= MTAyMC80NjQzOS8yMjk1MA==>
+        <script type="text/javascript">
+            (function (d, s) {
+                var j, e = d.getElementsByTagName(s)[0];
+                if (typeof LivereTower === 'function') { return; }
+                j = d.createElement(s);
+                j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                j.async = true;
+
+                e.parentNode.insertBefore(j, e);
+            })(document, 'script');
+        </script>
+        <noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
+    </div>
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:jianyong596@hotmail.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/BarryDeng" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/mmqrcode.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E4%BA%8Elxd"><span class="toc-number">1.</span> <span class="toc-text">关于lxd</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#lxc"><span class="toc-number">2.</span> <span class="toc-text">lxc</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 10
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/17</span><a class="archive-post-title" href= "/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/" >使用VMware vctl工具创建K8s集群</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/OpenFlow/" >OpenFlow 协议学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" >Lxd 源码解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Suricata/" >Suricata 学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Cisco%20IOS/" >Cisco IOS命令参考</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" >org.onosproject.fwd 应用解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/02</span><a class="archive-post-title" href= "/2019/09/02/hello-world/" >Hello World</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">08/27</span><a class="archive-post-title" href= "/2019/08/27/DPDK%E9%AA%8C%E8%AF%81%E8%AF%95%E9%AA%8C/" >DPDK Pktgen和Testpmd验证试验</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/mininet/" >mininet 学习</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/onos-sample-apps/" >ONOS官方示例应用解析</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Barry Deng"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

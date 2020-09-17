@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Barry Deng">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Barry Deng">
+    
+    <meta name="keywords" content="hexo,barrydeng,hexo-blog">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>Suricata 学习 · Sa1ka&#39;s Shelter</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Sa1ka&#39;s Shelter</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">Suricata 学习</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Sa1ka's Shelter</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            Suricata 学习
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2k</span>Reading time: <span class="post-count reading-time">8 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/12/06</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="Suricata"><a href="#Suricata" class="headerlink" title="Suricata"></a>Suricata</h1><p>Suricata是一款开源免费的网络威胁检测系统，可以在网络中作为IDS（Intrusion Detection System，入侵检测系统）、IPS（Intrusion Prevention System，入侵防御系统）和NSM（Network Security Monitoring，网络安全监控）使用，同样还可以离线分析pcap文件。Suricata使用专门的语言编写的规则来对网络流量进行分析，还可以利用Lua脚本来更加精确地分析，并以类似YAML或JSON的形式输出，可以方便存储在数据库中。目前Suricata项目属于OISF所有，OISF是一个非营利组织。</p>
+<h2 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h2><p>Suricata和其他的Linux软件类似，也具有两种安装方法，即直接安装发行版和编译安装。</p>
+<h3 id="PPA安装法"><a href="#PPA安装法" class="headerlink" title="PPA安装法"></a>PPA安装法</h3><p>以下操作均在Ubuntu 16.04中，其他发行版可以查阅官方wiki。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo add-apt-repository ppa:oisf/suricata-stable</span><br><span class="line">sudo apt-get update </span><br><span class="line">sudo apt-get install suricata</span><br></pre></td></tr></table></figure>
+
+<h3 id="编译安装法"><a href="#编译安装法" class="headerlink" title="编译安装法"></a>编译安装法</h3><p>首先需要安装程序依赖库</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get -y install libpcre3 libpcre3-dbg libpcre3-dev \</span><br><span class="line">build-essential autoconf automake libtool libpcap-dev libnet1-dev \</span><br><span class="line">libyaml-0-2 libyaml-dev zlib1g zlib1g-dev libcap-ng-dev libcap-ng0 \</span><br><span class="line">make libmagic-dev libjansson-dev libjansson4 pkg-config</span><br></pre></td></tr></table></figure>
+
+<p>下载源码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">VER=3.1</span><br><span class="line">wget &quot;http://www.openinfosecfoundation.org/download/suricata-$VER.tar.gz&quot; </span><br><span class="line">tar -xvzf &quot;suricata-$VER.tar.gz&quot; </span><br><span class="line">cd &quot;suricata-$VER&quot;</span><br></pre></td></tr></table></figure>
+
+<p>配置安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var</span><br><span class="line">make</span><br><span class="line">sudo make install</span><br><span class="line">sudo ldconfig</span><br></pre></td></tr></table></figure>
+
+<p>Suricata还提供了一些自动安装的脚本</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">make install-conf 自动创建和安装配置文件</span><br><span class="line">make install-rules 自动从Emergeing Threats下载最新的规则集</span><br><span class="line">make install-full 将上面两者都包括</span><br></pre></td></tr></table></figure>
+
+<h2 id="Setup"><a href="#Setup" class="headerlink" title="Setup"></a>Setup</h2><p>接下来我们需要部署Suricata，保证下面的命令均具备管理员权限。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mkdir /var/log/suricata # 日志信息</span><br><span class="line">mkdir /etc/suricata # 配置文件</span><br><span class="line">cp classification.config /etc/suricata</span><br><span class="line">cp reference.config /etc/suricata</span><br><span class="line">cp suricata.yaml /etc/suricata</span><br></pre></td></tr></table></figure>
+
+<p>在<code>/etc/suricata/suricata.yaml</code>文件中正确配置好变量。<code>HOME_NET</code>设置为本地网络的IP地址，而<code>EXTERNAL_NET</code>建议的设置值是<code>!$HOME_SET</code>，这样所有不是本地IP的流量均被当作外界地址，当然设置成<code>any</code>也是可以的，只是这样的话会产生一些假的警报。下面的一些服务器均会被默认设置为<code>$HOME_NET</code>。<code>AIM_SERVERS</code>设置为<code>any</code>。</p>
+<h2 id="Run"><a href="#Run" class="headerlink" title="Run"></a>Run</h2><p>Suricata的运行方式比较简单，只需要选择需要监听的网络接口，使用类似于下面的命令即可。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo suricata -c /etc/suricata/suricata.yaml -i wlan0</span><br></pre></td></tr></table></figure>
+
+<p>运行后产生的日志文件在<code>/var/log/suricata</code>目录下，我们可以使用类似于<code>tail -f http.log stats.log</code>的命令来监视程序的执行结果。</p>
+<h2 id="Rules"><a href="#Rules" class="headerlink" title="Rules"></a>Rules</h2><p>Suricata中最重要的就是关于规则的指定，使用特定的规则集就可以对特定的流量进行分析和处理，如果使用了IPS模式那么还可以直接处理报文内容。一般来说，我们会可以从互联网上下载最新的规则集，一般来自于Emerging Threats(Pro)和Sourcefire的VRT。手动管理的方式比较麻烦，我们可以使用到一款工具<code>Oinkmaster</code>。<code>oinkmaster</code>可以自动化下载、管理rules。一般来说，规则由三个部分构成：Action、Header和Rule options。<br>例如下面这条</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alert tcp $EXTERNAL_NET any -&gt; $HOME_NET 8888 (msg: &quot;meow&quot;; content: &quot;meow&quot;; )</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>alert</code>表示动作，表示匹配后将发出警报。</li>
+<li><code>tcp</code>表示是TCP报文，还可以是<code>ip</code>、<code>udp</code>、<code>icmp</code>等，还包括一些常见的应用层协议。</li>
+<li><code>$EXTERNAL</code>表示使用前面定义的外部地址，可以使用<code>!1.1.1.1</code>、<code>![1.1.1.1, 1.1.1.2]</code>、<code>[10.0.0.0/24, !10.0.0.5]</code>等形式。</li>
+<li><code>any</code>表示端口，有<code>[79,80:82,83]</code>这样的形式。</li>
+<li><code>-&gt;</code>表示方向，可以是<code>-&gt;</code>或<code>&lt;&gt;</code>。</li>
+<li><code>(msg: &quot;meow&quot;; content: &quot;meow&quot;; )</code>表示规则选项，中间使用分号断开，包括meta-information、headers、payloads和flows等选项。具体内容将在后面说明。</li>
+</ul>
+<h3 id="Meta-settings"><a href="#Meta-settings" class="headerlink" title="Meta-settings"></a>Meta-settings</h3><p>Meta-settings不会影响检测过程，只是用来完成记录等附属功能。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">msg: &quot;some description&quot;; 将显示在日志中</span><br><span class="line">sid: 123; 每条规则的编号</span><br><span class="line">rev: 123; 规则的版本号</span><br><span class="line">gid: 1; 组编号</span><br><span class="line">classtype: trojan-activity; 规则的分类</span><br><span class="line">reference: bugtraq, 123; http://www.securityfocus.com/bid; 规则的参考位置</span><br><span class="line">priority:1; 规则优先级</span><br><span class="line">metadata: ...;</span><br><span class="line">target: [src_ip|dest_ip];</span><br></pre></td></tr></table></figure>
+
+<h3 id="Header-Keywords"><a href="#Header-Keywords" class="headerlink" title="Header Keywords"></a>Header Keywords</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">ttl: 10;</span><br><span class="line">ipopts: lsrr; IP选项</span><br><span class="line">sameip; 源IP和目的IP相同</span><br><span class="line">ip_proto: TCP;</span><br><span class="line">id: 1;</span><br><span class="line">geoip: src, RU;</span><br><span class="line">fragbits:[*+!]&lt;[MDR]&gt;;</span><br><span class="line">fragoffset:[!|&lt;|&gt;]&lt;number&gt;;</span><br><span class="line">seq:0;</span><br><span class="line">ack:1;</span><br><span class="line">window:[!]&lt;number&gt;;</span><br><span class="line">itype:min&lt;&gt;max;</span><br><span class="line">itype:[&lt;|&gt;]&lt;number&gt;;</span><br><span class="line">icode:min&lt;&gt;max;</span><br><span class="line">icode:[&lt;|&gt;]&lt;number&gt;;</span><br><span class="line">icmp_id:&lt;number&gt;;</span><br><span class="line">icmp_seq:&lt;number&gt;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Payload-Keywords"><a href="#Payload-Keywords" class="headerlink" title="Payload Keywords"></a>Payload Keywords</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">content:&quot;a|0D|bc&quot;;</span><br><span class="line">content:&quot;|61 0D 62 63|&quot;;</span><br><span class="line">content:&quot;a|0D|b|63|&quot;;</span><br><span class="line">nocase;</span><br><span class="line">depth:12;</span><br><span class="line">offset:3;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Flowbits"><a href="#Flowbits" class="headerlink" title="Flowbits"></a>Flowbits</h3><p>通过在Suricata中保存标志位来判断若干个流量的关联性</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">flowbits: set, name                设置name指定的条件</span><br><span class="line">flowbits: isset, name              检查是否有name指定的条件设置</span><br><span class="line">flowbits: toggle, name             切换name指定的条件设置情况</span><br><span class="line">flowbits: unset, name              取消设置name指定的条件</span><br><span class="line">flowbits: isnotset, name           检查是否没有name指定的条件设置</span><br><span class="line">flowbits: noalert                  不产生alert</span><br></pre></td></tr></table></figure>
+
+<h3 id="Flow"><a href="#Flow" class="headerlink" title="Flow"></a>Flow</h3><p>匹配流的方向，是否建立连接等</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">flow:to_client, established</span><br><span class="line">flow:to_server, established, only_stream</span><br><span class="line">flow:to_server, not_established, no_frag</span><br></pre></td></tr></table></figure>
+
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>Suricata有几个关键组件构成：线程、线程模块和队列。Suricata以多线程的方式运行，而线程模块即对应其包获取、解码、检测和输出模块。一个包在Suricata会以类似流水线的方式一级一级地传递给下一个线程模块处理，而在这里的“传送带”就是队列。一个线程可以包含多个线程模块，这就是Runmode。<br>使用<code>suricata --list-runmodes</code>可以看到Suricata目前可以使用的runmodes。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">------------------------------------- Runmodes ------------------------------------------</span><br><span class="line">| RunMode Type      | Custom Mode       | Description </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| PCAP_DEV          | single            | Single threaded pcap live mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Multi threaded pcap live mode.  Packets from each flow are assigned to a single detect thread, unlike &quot;pcap_live_auto&quot; where packe</span><br><span class="line">ts from the same flow can be processed by any detect thread </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers pcap live mode, each thread does all tasks from acquisition to logging </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| PCAP_FILE         | single            | Single threaded pcap file mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Multi threaded pcap file mode.  Packets from each flow are assigned to a single detect thread, unlike &quot;pcap-file-auto&quot; where packe</span><br><span class="line">ts from the same flow can be processed by any detect thread </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| PFRING(DISABLED)  | autofp            | Multi threaded pfring mode.  Packets from each flow are assigned to a single detect thread, unlike &quot;pfring_auto&quot; where packets fro</span><br><span class="line">m the same flow can be processed by any detect thread </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | single            | Single threaded pfring mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers pfring mode, each thread does all tasks from acquisition to logging </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| NFQ               | autofp            | Multi threaded NFQ IPS mode with respect to flow </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Multi queue NFQ IPS mode with one thread per queue </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| NFLOG             | autofp            | Multi threaded nflog mode   </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | single            | Single threaded nflog mode  </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers nflog mode          </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| IPFW              | autofp            | Multi threaded IPFW IPS mode with respect to flow </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Multi queue IPFW IPS mode with one thread per queue </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| ERF_FILE          | single            | Single threaded ERF file mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Multi threaded ERF file mode.  Packets from each flow are assigned to a single detect thread </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| ERF_DAG           | autofp            | Multi threaded DAG mode.  Packets from each flow are assigned to a single detect thread, unlike &quot;dag_auto&quot; where packets from the </span><br><span class="line">same flow can be processed by any detect thread </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | single            | Singled threaded DAG mode   </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers DAG mode, each thread does all  tasks from acquisition to logging </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| AF_PACKET_DEV     | single            | Single threaded af-packet mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers af-packet mode, each thread does all tasks from acquisition to logging </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Multi socket AF_PACKET mode.  Packets from each flow are assigned to a single detect thread. </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| NETMAP(DISABLED)  | single            | Single threaded netmap mode </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | workers           | Workers netmap mode, each thread does all tasks from acquisition to logging </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Multi threaded netmap mode.  Packets from each flow are assigned to a single detect thread. </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br><span class="line">| UNIX_SOCKET       | single            | Unix socket mode            </span><br><span class="line">|                   ---------------------------------------------------------------------</span><br><span class="line">|                   | autofp            | Unix socket mode            </span><br><span class="line">|----------------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，在Suricata中包含三种Custom Mode，<code>single/workers/autofp</code>，根据右边的介绍我们能够知道当前模式的运行特点。在<code>workers</code>模式下，每一个线程上包含一个完整的包处理模块，也就是说将获取到的报文将分发到包处理线程中，而Suricata将会将属于同一个flow的流量放在一个线程中避免出现问题。</p>
+<h2 id="其他支持软件"><a href="#其他支持软件" class="headerlink" title="其他支持软件"></a>其他支持软件</h2><h3 id="Oinkmaster"><a href="#Oinkmaster" class="headerlink" title="Oinkmaster"></a>Oinkmaster</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">oinkmaster.pl -C /etc/oinkmaster.conf -o /etc/suricata/rules -i</span><br></pre></td></tr></table></figure>
+
+<p>Suricata配置文件suricata.yaml中的outputs2 &gt; unified2-alert可以设定在产生alert时dump出可疑数据包的信息，这个格式的好处是：</p>
+<ul>
+<li>方便归档管理</li>
+<li>生成速度快。<h3 id="Barnyard2"><a href="#Barnyard2" class="headerlink" title="Barnyard2"></a>Barnyard2</h3>Barnyard2就是个类似Syslog的东西，从Snort/Suricata处取得unified2格式的输入，产生其他格式的输出，比如给Prelude Hybrid IDS system、Syslog、MySQL。</li>
+</ul>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://barrydeng.github.io">Barry Deng</a>
+            <p>原文链接：<a href="http://barrydeng.github.io/2019/12/06/Suricata/">http://barrydeng.github.io/2019/12/06/Suricata/</a>
+            <p>发表日期：<a href="http://barrydeng.github.io/2019/12/06/Suricata/">December 6th 2019, 10:33:37 am</a>
+            <p>更新日期：<a href="http://barrydeng.github.io/2019/12/06/Suricata/">December 6th 2019, 10:33:37 am</a>
+            <p>版权声明：本文采用<a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" title= "org.onosproject.fwd 应用解析">
+                    <div class="nextTitle">org.onosproject.fwd 应用解析</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/12/06/Cisco%20IOS/" title= "Cisco IOS命令参考">
+                    <div class="prevTitle">Cisco IOS命令参考</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+    <div id="lv-container" data-id="city" data-uid= MTAyMC80NjQzOS8yMjk1MA==>
+        <script type="text/javascript">
+            (function (d, s) {
+                var j, e = d.getElementsByTagName(s)[0];
+                if (typeof LivereTower === 'function') { return; }
+                j = d.createElement(s);
+                j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                j.async = true;
+
+                e.parentNode.insertBefore(j, e);
+            })(document, 'script');
+        </script>
+        <noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
+    </div>
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:jianyong596@hotmail.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/BarryDeng" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/mmqrcode.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Suricata"><span class="toc-number">1.</span> <span class="toc-text">Suricata</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Installation"><span class="toc-number">1.1.</span> <span class="toc-text">Installation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#PPA%E5%AE%89%E8%A3%85%E6%B3%95"><span class="toc-number">1.1.1.</span> <span class="toc-text">PPA安装法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85%E6%B3%95"><span class="toc-number">1.1.2.</span> <span class="toc-text">编译安装法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Setup"><span class="toc-number">1.2.</span> <span class="toc-text">Setup</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Run"><span class="toc-number">1.3.</span> <span class="toc-text">Run</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Rules"><span class="toc-number">1.4.</span> <span class="toc-text">Rules</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Meta-settings"><span class="toc-number">1.4.1.</span> <span class="toc-text">Meta-settings</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Header-Keywords"><span class="toc-number">1.4.2.</span> <span class="toc-text">Header Keywords</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Payload-Keywords"><span class="toc-number">1.4.3.</span> <span class="toc-text">Payload Keywords</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Flowbits"><span class="toc-number">1.4.4.</span> <span class="toc-text">Flowbits</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Flow"><span class="toc-number">1.4.5.</span> <span class="toc-text">Flow</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">1.5.</span> <span class="toc-text">原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96%E6%94%AF%E6%8C%81%E8%BD%AF%E4%BB%B6"><span class="toc-number">1.6.</span> <span class="toc-text">其他支持软件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Oinkmaster"><span class="toc-number">1.6.1.</span> <span class="toc-text">Oinkmaster</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Barnyard2"><span class="toc-number">1.6.2.</span> <span class="toc-text">Barnyard2</span></a></li></ol></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 10
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/17</span><a class="archive-post-title" href= "/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/" >使用VMware vctl工具创建K8s集群</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/OpenFlow/" >OpenFlow 协议学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" >Lxd 源码解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Suricata/" >Suricata 学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Cisco%20IOS/" >Cisco IOS命令参考</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" >org.onosproject.fwd 应用解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/02</span><a class="archive-post-title" href= "/2019/09/02/hello-world/" >Hello World</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">08/27</span><a class="archive-post-title" href= "/2019/08/27/DPDK%E9%AA%8C%E8%AF%81%E8%AF%95%E9%AA%8C/" >DPDK Pktgen和Testpmd验证试验</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/mininet/" >mininet 学习</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/onos-sample-apps/" >ONOS官方示例应用解析</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Barry Deng"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

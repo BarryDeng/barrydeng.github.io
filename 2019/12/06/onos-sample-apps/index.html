@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Barry Deng">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Barry Deng">
+    
+    <meta name="keywords" content="hexo,barrydeng,hexo-blog">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>ONOS官方示例应用解析 · Sa1ka&#39;s Shelter</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Sa1ka&#39;s Shelter</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">ONOS官方示例应用解析</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Sa1ka's Shelter</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            ONOS官方示例应用解析
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">1.1k</span>Reading time: <span class="post-count reading-time">5 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/12/06</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h2 id="onos-app-calendar"><a href="#onos-app-calendar" class="headerlink" title="onos-app-calendar"></a>onos-app-calendar</h2><p>一个RESTful的web应用，提供添加链路时延、带宽限制的Intent。用到了<code>ConnectivityIntent</code>。完成功能的逻辑</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Create an Intent for a bidirectional path with constraints.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key optional intent key</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> src the path source (DPID or hostID)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> dst the path destination (DPID or hostID)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> srcPort the source port (-1 if src/dest is a host)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> dstPort the destination port (-1 if src/dest is a host)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> bandwidth the bandwidth (mbps) requirement for the path</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> latency the latency (micro sec) requirement for the path</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the appropriate intent</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Intent <span class="title">createIntent</span><span class="params">(Key key,</span></span></span><br><span class="line"><span class="function"><span class="params">                            String src,</span></span></span><br><span class="line"><span class="function"><span class="params">                            String dst,</span></span></span><br><span class="line"><span class="function"><span class="params">                            String srcPort,</span></span></span><br><span class="line"><span class="function"><span class="params">                            String dstPort,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Long bandwidth,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Long latency)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    TrafficSelector selector = buildTrafficSelector();</span><br><span class="line">    TrafficTreatment treatment = builder().build();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Constraint constraintBandwidth =</span><br><span class="line">            <span class="keyword">new</span> BandwidthConstraint(Bandwidth.mbps(bandwidth));</span><br><span class="line">    <span class="keyword">final</span> Constraint constraintLatency =</span><br><span class="line">            <span class="keyword">new</span> LatencyConstraint(Duration.of(latency, ChronoUnit.MICROS));</span><br><span class="line">    <span class="keyword">final</span> List&lt;Constraint&gt; constraints = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    constraints.add(constraintBandwidth);</span><br><span class="line">    constraints.add(constraintLatency);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (srcPort.equals(<span class="string">"-1"</span>)) &#123;</span><br><span class="line">        HostId srcPoint = HostId.hostId(src);</span><br><span class="line">        HostId dstPoint = HostId.hostId(dst);</span><br><span class="line">        <span class="keyword">return</span> HostToHostIntent.builder()</span><br><span class="line">                .appId(appId())</span><br><span class="line">                .key(key)</span><br><span class="line">                .one(srcPoint)</span><br><span class="line">                .two(dstPoint)</span><br><span class="line">                .selector(selector)</span><br><span class="line">                .treatment(treatment)</span><br><span class="line">                .constraints(constraints)</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ConnectPoint srcPoint = <span class="keyword">new</span> ConnectPoint(deviceId(src), portNumber(srcPort));</span><br><span class="line">        ConnectPoint dstPoint = <span class="keyword">new</span> ConnectPoint(deviceId(dst), portNumber(dstPort));</span><br><span class="line">        <span class="keyword">return</span> TwoWayP2PIntent.builder()</span><br><span class="line">                .appId(appId())</span><br><span class="line">                .key(key)</span><br><span class="line">                .one(srcPoint)</span><br><span class="line">                .two(dstPoint)</span><br><span class="line">                .selector(selector)</span><br><span class="line">                .treatment(treatment)</span><br><span class="line">                .constraints(constraints)</span><br><span class="line">                .build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Synchronously submits an intent to the Intent Service.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> intent intent to submit</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> true if operation succeed, false otherwise</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">submitIntent</span><span class="params">(Intent intent)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    IntentService service = get(IntentService<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">    CountDownLatch latch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">    InternalIntentListener listener = <span class="keyword">new</span> InternalIntentListener(intent, service, latch);</span><br><span class="line">    service.addListener(listener);</span><br><span class="line">    service.submit(intent);</span><br><span class="line">    log.info(<span class="string">"Submitted Calendar App intent and waiting: &#123;&#125;"</span>, intent);</span><br><span class="line">    <span class="keyword">if</span> (latch.await(TIMEOUT, TimeUnit.SECONDS) &amp;&amp;</span><br><span class="line">            listener.getState() == INSTALLED) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="onos-app-carrierethernet"><a href="#onos-app-carrierethernet" class="headerlink" title="onos-app-carrierethernet"></a>onos-app-carrierethernet</h2><p>根据<code>pom.xml</code>文件的内容，我们可以知道这个应用是用于<strong>运营以太网服务（Carrier Ethernet）</strong>，具体介绍在<a href="https://wiki.onosproject.org/display/ONOS/Carrier+Ethernet+Application" target="_blank" rel="noopener">Carrier Ethernet</a>，由城域以太网论坛（MEF）建立。CE包含五个模块：保护、QoS、扩展、业务管理、TDM。个人理解是，希望以太网上的流量，能够在SDN环境下加入一定的识别特征，这样才能方便城域网中的网络设备根据这些特征进行服务的定制。这个项目相对来说比较复杂，而且更新也非常的频繁，先挖个坑在这里，以后有时间的话可以认真阅读一下其实现。</p>
+<h2 id="onos-app-database-perf"><a href="#onos-app-database-perf" class="headerlink" title="onos-app-database-perf"></a>onos-app-database-perf</h2><p>一个用来测试ONOS集群存储数据性能的应用，在activate中包含有对于<code>StorageService</code>的使用，包括创建并发式Map的方法，注册序列化器KryoNamespace等，之后创建多个线程测试具体的性能指标。</p>
+<h2 id="onos-app-ecord-co"><a href="#onos-app-ecord-co" class="headerlink" title="onos-app-ecord-co"></a>onos-app-ecord-co</h2><p>一个CORD的实现应用，CORD（Central Office Re-architected as a DataCenter），意为在家庭、公司等网络边界的基础网络设备，实现一个数据中心的服务功能。CORD目前有三种类型：ECORD、RCORD和MCORD，具体的详情可以查看<a href="https://www.opennetworking.org/projects/cord/" target="_blank" rel="noopener">CORD</a>。这个应用给出了一个ECORD的实现方案。这个应用比较全面地展示了ONOS的抽象子系统概念，我们可以从项目的结构看出来。</p>
+<p><code>CentralOffice.java</code>文件是组件的主文件，主要工作是注册应用，并且创建了一个名为<code>BigSwitchDeviceProvider</code>的对象，那么接下来我们去找找实现。<code>BigSwitchDeviceProvider</code>继承于<code>DeviceProvider</code>。从前面两次的<code>loadConfig</code>操作中我们可以看出来这个应用支持修改config文件，并且提供有RPC和RESTful两种修改模式，然而目前我对于<code>ConfigService</code>还没有太深的了解，因此这里填个坑等到以后再来了解。在<code>activate</code>方法中基本就是向<code>deviceProvider</code>中注册了一个设备，接下来使用LLDP协议发现网络拓扑。为了完成LLDP的工作，程序中使用到了<code>onlab-misc</code>中的<code>ONOSLLDP</code>工具类，方便使用LLDP协议。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Activate</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">activate</span><span class="params">(ComponentContext context)</span> </span>&#123;</span><br><span class="line">    cfgService.registerProperties(getClass()); <span class="comment">// 在ComponentConfigService上进行注册</span></span><br><span class="line">    loadRpcConfig(context); </span><br><span class="line">    loadRestConfig(context); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// setup service to, and register with, providers</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        remoteServiceContext = rpcService.get(URI.create(remoteUri));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (UnsupportedOperationException e) &#123;</span><br><span class="line">        log.warn(<span class="string">"Unsupported URI: &#123;&#125;"</span>, remoteUri);</span><br><span class="line">    &#125;</span><br><span class="line">    providerId = <span class="keyword">new</span> ProviderId(schemeProp, idProp);</span><br><span class="line">    executor = newSingleThreadScheduledExecutor(groupedThreads(<span class="string">"onos/bigswitch"</span>, <span class="string">"discovery-%d"</span>));</span><br><span class="line">    registerToDeviceProvider();</span><br><span class="line">    prepareProbe();</span><br><span class="line">    registerToLinkServices();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// start listening to config changes</span></span><br><span class="line">    NetworkConfigListener cfglistener = <span class="keyword">new</span> InternalConfigListener();</span><br><span class="line">    cfgRegistry.addListener(cfglistener);</span><br><span class="line">    cfgRegistry.registerConfigFactory(xcConfigFactory);</span><br><span class="line">    log.info(<span class="string">"Started"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Deactivate</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deactivate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    packetService.removeProcessor(packetProcessor);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">// advertise all Links as vanished</span></span><br><span class="line">    knownLinks.invalidateAll();</span><br><span class="line"></span><br><span class="line">    cfgRegistry.unregisterConfigFactory(xcConfigFactory);</span><br><span class="line">    cfgService.unregisterProperties(getClass(), <span class="keyword">false</span>);</span><br><span class="line">    unregisterFromLinkServices();</span><br><span class="line">    executor.shutdownNow();</span><br><span class="line">    unregisterFromDeviceProvider();</span><br><span class="line">    <span class="comment">// Won't hurt but necessary?</span></span><br><span class="line">    deviceProviderService = <span class="keyword">null</span>;</span><br><span class="line">    providerId = <span class="keyword">null</span>;</span><br><span class="line">    log.info(<span class="string">"Stopped"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Modified</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">modified</span><span class="params">(ComponentContext context)</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">"Reloading config..."</span>);</span><br><span class="line">    <span class="comment">// Needs re-registration to DeviceProvider</span></span><br><span class="line">    <span class="keyword">if</span> (loadRpcConfig(context)) &#123;</span><br><span class="line">        <span class="comment">// unregister from Device and Link Providers with old parameters</span></span><br><span class="line">        unregisterFromLinkServices();</span><br><span class="line">        unregisterFromDeviceProvider();</span><br><span class="line">        <span class="comment">// register to Device and Link Providers with new parameters</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            remoteServiceContext = rpcService.get(URI.create(remoteUri));</span><br><span class="line">            providerId = <span class="keyword">new</span> ProviderId(schemeProp, idProp);</span><br><span class="line">            registerToDeviceProvider();</span><br><span class="line">            registerToLinkServices();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnsupportedOperationException e) &#123;</span><br><span class="line">            log.warn(<span class="string">"Unsupported URI: &#123;&#125;"</span>, remoteUri);</span><br><span class="line">        &#125;</span><br><span class="line">        log.info(<span class="string">"Re-registered with Device and Link Providers"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Needs to advertise cross-connect links</span></span><br><span class="line">    <span class="keyword">if</span> (loadRestConfig(context)) &#123;</span><br><span class="line">        advertiseCrossConnectLinksOnAllPorts();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://barrydeng.github.io">Barry Deng</a>
+            <p>原文链接：<a href="http://barrydeng.github.io/2019/12/06/onos-sample-apps/">http://barrydeng.github.io/2019/12/06/onos-sample-apps/</a>
+            <p>发表日期：<a href="http://barrydeng.github.io/2019/12/06/onos-sample-apps/">December 6th 2019, 10:35:25 am</a>
+            <p>更新日期：<a href="http://barrydeng.github.io/2019/12/06/onos-sample-apps/">December 6th 2019, 10:35:25 am</a>
+            <p>版权声明：本文采用<a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/" title= "使用VMware vctl工具创建K8s集群">
+                    <div class="nextTitle">使用VMware vctl工具创建K8s集群</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/12/06/mininet/" title= "mininet 学习">
+                    <div class="prevTitle">mininet 学习</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+    <div id="lv-container" data-id="city" data-uid= MTAyMC80NjQzOS8yMjk1MA==>
+        <script type="text/javascript">
+            (function (d, s) {
+                var j, e = d.getElementsByTagName(s)[0];
+                if (typeof LivereTower === 'function') { return; }
+                j = d.createElement(s);
+                j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                j.async = true;
+
+                e.parentNode.insertBefore(j, e);
+            })(document, 'script');
+        </script>
+        <noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
+    </div>
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:jianyong596@hotmail.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/BarryDeng" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/mmqrcode.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#onos-app-calendar"><span class="toc-number">1.</span> <span class="toc-text">onos-app-calendar</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#onos-app-carrierethernet"><span class="toc-number">2.</span> <span class="toc-text">onos-app-carrierethernet</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#onos-app-database-perf"><span class="toc-number">3.</span> <span class="toc-text">onos-app-database-perf</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#onos-app-ecord-co"><span class="toc-number">4.</span> <span class="toc-text">onos-app-ecord-co</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 10
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/17</span><a class="archive-post-title" href= "/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/" >使用VMware vctl工具创建K8s集群</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/OpenFlow/" >OpenFlow 协议学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" >Lxd 源码解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Suricata/" >Suricata 学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Cisco%20IOS/" >Cisco IOS命令参考</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" >org.onosproject.fwd 应用解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/02</span><a class="archive-post-title" href= "/2019/09/02/hello-world/" >Hello World</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">08/27</span><a class="archive-post-title" href= "/2019/08/27/DPDK%E9%AA%8C%E8%AF%81%E8%AF%95%E9%AA%8C/" >DPDK Pktgen和Testpmd验证试验</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/mininet/" >mininet 学习</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/onos-sample-apps/" >ONOS官方示例应用解析</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Barry Deng"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+

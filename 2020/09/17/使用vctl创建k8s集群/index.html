@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Barry Deng">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Barry Deng">
+    
+    <meta name="keywords" content="hexo,barrydeng,hexo-blog">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>使用VMware vctl工具创建K8s集群 · Sa1ka&#39;s Shelter</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Sa1ka&#39;s Shelter</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">使用VMware vctl工具创建K8s集群</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Sa1ka's Shelter</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            使用VMware vctl工具创建K8s集群
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2.4k</span>Reading time: <span class="post-count reading-time">11 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/09/17</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <p>vctl是VMware最新开发的一个CLI工具，主要是用来创建满足OCI标准的容器。vctl包含在VMware Workstation Pro 16 和 VMware Fusion 12以上版本中。</p>
+<h2 id="使用vctl"><a href="#使用vctl" class="headerlink" title="使用vctl"></a>使用vctl</h2><p>首先在使用vctl之前，我们首先需要知道，该工具只是一个管理前端，真正的容器操作是由守护进程来实现的。因此在使用该命令之前，我们要首先检查守护进程的状态（默认情况下是关闭的）。vctl的容器运行时包括三个文件：</p>
+<ul>
+<li>bin/containerd：这个进程就是用来执行容器相关指令的，检查方法是<code>vctl system info</code>，开启方法是<code>vctl system start</code>，结束方法是<code>vctl system stop</code>。</li>
+<li>bin/containerd-shim-crx-v2：看到shim这个词，应该能够从docker联想到是用来作为容器根进程的，工作在CRX VM的容器和containerd进程之间。</li>
+<li>bin/vctl：这个就是我们上面提到的前端管理工具。</li>
+</ul>
+<p>上面我们提到了CRX VM，这个其实就是VMware专门用来运行容器的轻量级虚拟机，只要有一个容器创建那么就会开启一个CRX VM，同样删掉这个容器这个VM就会停止并删除。容器名和CRX VM的名字是一样的。</p>
+<p>vctl的基本命令和docker完全一致，这也就是说，<code>ps/run/start/stop/rm/rmi/build/create</code>等命令都可以使用相同的方式使用。这里作为示例，给出一个nginx容器的创建过程。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">vctl pull nginx</span><br><span class="line">vctl run --name=myNginx -t -p 8888:80 -d nginx</span><br><span class="line">vctl ps -a</span><br><span class="line">vctl stop nginx</span><br><span class="line">vctl rm nginx</span><br><span class="line">vctl rmi nginx</span><br></pre></td></tr></table></figure>
+
+<p>可以从任务管理器上看到相关进程的启动情况。</p>
+<p><img src="containerd.png" alt="进程图"></p>
+<p>vctl的详细使用方法可以参考<a href="https://docs.vmware.com/en/VMware-Fusion/12/com.vmware.fusion.using.doc/GUID-9BFCCD98-96A2-4633-BF8F-52976CFE2877.html" target="_blank" rel="noopener">VMware的官方文档</a>。</p>
+<h2 id="创建k8s集群"><a href="#创建k8s集群" class="headerlink" title="创建k8s集群"></a>创建k8s集群</h2><p>从上面我们可以看到，vctl提供了类似于docker的容器管理功能，那么现在要创建k8s集群，只需要使用类似kubeadm的工具创建多个容器构成k8s的运行环境即可。这其中，KIND就是一个比较好用的k8s安装工具。从VMware Fusion 12开始，vctl工具提供了KIND的支持。使用方法也非常简单，只需要运行<code>vctl kind</code>即可。这条命令会做四件事情：</p>
+<ul>
+<li><p>在用户目录下创建一个<code>.vctl</code>文件夹</p>
+</li>
+<li><p>下载<code>kubectl</code>、<code>kind</code>和<code>crx.vmdk</code>三个文件，保存在<code>bin</code>目录下</p>
+</li>
+<li><p>创建一个名为<code>docker</code>的链接文件，指向<code>vctl</code></p>
+</li>
+<li><p>创建一个基于vctl的KIND上下文，主要是将<code>~/.vctl/bin</code>文件夹加入到PATH环境变量中</p>
+</li>
+</ul>
+<p>运行这条命令后，会弹出一个新的终端，这个终端上的kubectl、kind、docker等命令均指向的是刚才安装的KIND上下文环境，而不是原先系统安装的。</p>
+<blockquote>
+<p> 需要注意的是，vctl并不支持<code>kind build</code>和<code>kind export logs</code>命令，且CRX VM的默认配置是2G 2C。</p>
+</blockquote>
+<p>现在已经有了kind的环境了，剩下的事情就交给kind了。<a href="https://kind.sigs.k8s.io/docs/user/quick-start/" target="_blank" rel="noopener">KIND文档</a></p>
+<p>最简单的命令，<code>kind create cluster</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">C:\Program Files (x86)\VMware\VMware Workstation\bin&gt;kind create cluster</span><br><span class="line">Creating cluster &quot;kind&quot; ...</span><br><span class="line"> • Ensuring node image (kindest/node:v1.18.2) 🖼  ...</span><br><span class="line"> ✓ Ensuring node image (kindest/node:v1.18.2) 🖼</span><br><span class="line"> • Preparing nodes 📦   ...</span><br><span class="line"> ✓ Preparing nodes 📦</span><br><span class="line"> • Writing configuration 📜  ...</span><br><span class="line"> ✓ Writing configuration 📜</span><br><span class="line"> • Starting control-plane 🕹️  ...</span><br><span class="line"> ✓ Starting control-plane 🕹️</span><br><span class="line"> • Installing CNI 🔌  ...</span><br><span class="line"> ✓ Installing CNI 🔌</span><br><span class="line"> • Installing StorageClass 💾  ...</span><br><span class="line"> ✓ Installing StorageClass 💾</span><br><span class="line">Set kubectl context to &quot;kind-kind&quot;</span><br><span class="line">You can now use your cluster with:</span><br><span class="line"></span><br><span class="line">kubectl cluster-info --context kind-kind</span><br><span class="line"></span><br><span class="line">Thanks for using kind! 😊</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>kubectl cluster --context kind-kind</code>可以看看刚刚创建的k8s集群状态。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">C:\Program Files (x86)\VMware\VMware Workstation\bin&gt;kubectl cluster-info --context kind-kind</span><br><span class="line">Kubernetes master is running at https://127.0.0.1:64039</span><br><span class="line">KubeDNS is running at https://127.0.0.1:64039/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy</span><br><span class="line"></span><br><span class="line">To further debug and diagnose cluster problems, use &apos;kubectl cluster-info dump&apos;.</span><br></pre></td></tr></table></figure>
+
+<p>此时，<code>kubectl get nodes</code>和<code>kubectl get pods</code>等命令已经可以正常使用了，我们已经使用vctl创建了一个单节点的k8s环境。</p>
+<h2 id="看看原理"><a href="#看看原理" class="headerlink" title="看看原理"></a>看看原理</h2><p>安装过程到这里就差不多了，更复杂的k8s集群只需要在kind中传入自定义的配置文件即可。如果这个时候我们使用<code>docker ps</code>命令查看真正用来承载k8s集群的容器，就会发现实际上只有一个容器在运行。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">C:\Program Files (x86)\VMware\VMware Workstation\bin&gt;docker ps -a</span><br><span class="line">────                 ─────                                                                                  ───────                   ──                ─────            ──────    ─────────────</span><br><span class="line">NAME                 IMAGE                                                                                  COMMAND                   IP                PORTS            STATUS    CREATION TIME</span><br><span class="line">────                 ─────                                                                                  ───────                   ──                ─────            ──────    ─────────────</span><br><span class="line">kind-control-plane   kindest/node@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f   /usr/local/bin/entry...   192.168.100.132   64039:6443/tcp   running   2020-09-17T16:50:22+08:00</span><br></pre></td></tr></table></figure>
+
+<p>是不是感觉很奇怪，因为如果你尝试过其他的安装方法，应该会有印象，那就是k8s的运行组件相当多，控制节点的<code>apiServer</code>、<code>scheduler</code>、<code>controller-manager</code>以及计算节点上<code>kubelet</code>这些在其他安装方法中一般都是由独立的容器来运行的，那么在这里为什么会只有一个呢？</p>
+<p>通过查阅KIND文档可以发现，原来KIND使用<code>node-image</code>来运行这些组件，例如<code>kubeadm</code>和<code>kubelet</code>等等，而这些运行依赖和<code>node-image</code>本身则是由<code>base-image</code>来生成的。生成过程我们可以不用关心，现在让我们主要来看看<code>node-image</code>这个镜像生成的单个容器是如何运行所有的k8s组件。</p>
+<p>使用<code>docker exec -it kind-control-plane /bin/bash</code>进入到容器中，首先<code>ps</code>看看运行的进程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">root@kind-control-plane:/kind# ps ajxf</span><br><span class="line"> PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND</span><br><span class="line">    0  6178  6178  6178 pts/3     6913 Ss       0   0:00 /bin/bash</span><br><span class="line"> 6178  6913  6913  6178 pts/3     6913 R+       0   0:00  \_ ps ajxf</span><br><span class="line">    0     1     1     1 ?           -1 Ss       0   0:00 /sbin/init</span><br><span class="line">    1   104   104   104 ?           -1 S&lt;s      0   0:00 /lib/systemd/systemd-journald</span><br><span class="line">    1   113   113   113 ?           -1 Ssl      0   0:18 /usr/local/bin/containerd</span><br><span class="line">    1   311   311   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 00d79d58327ca059b96cdd9c651d12853a2e2622e65472230414dc15d65821bd -address /run/containerd/con</span><br><span class="line">  311   405   405   405 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  311   507   507   507 ?           -1 Ssl      0   0:38  \_ kube-controller-manager --allocate-node-cidrs=true --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf --authorization-kubeconfig=/etc</span><br><span class="line">    1   322   322   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 482207771a3b7eba237dc037dba4f5717e54842f7bf38d367f391030a9091f38 -address /run/containerd/con</span><br><span class="line">  322   401   401   401 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  322   547   547   547 ?           -1 Ssl      0   1:56  \_ kube-apiserver --advertise-address=192.168.100.132 --allow-privileged=true --authorization-mode=Node,RBAC --client-ca-file=/etc/kubernetes/pki/ca.crt</span><br><span class="line">    1   323   323   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 5101a9a24071e5c10d052d01918361dee8a97a2822b4bb82bc772460ce0045a2 -address /run/containerd/con</span><br><span class="line">  323   399   399   399 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  323   586   586   586 ?           -1 Rsl      0   0:47  \_ etcd --advertise-client-urls=https://192.168.100.132:2379 --cert-file=/etc/kubernetes/pki/etcd/server.crt --client-cert-auth=true --data-dir=/var/lib/</span><br><span class="line">    1   324   324   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id e68a9f43205edd282548f6db0942c0c0b503a66894b8bf5e3d7d1b7e5be8a71d -address /run/containerd/con</span><br><span class="line">  324   404   404   404 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  324   500   500   500 ?           -1 Ssl      0   0:10  \_ kube-scheduler --authentication-kubeconfig=/etc/kubernetes/scheduler.conf --authorization-kubeconfig=/etc/kubernetes/scheduler.conf --bind-address=127</span><br><span class="line">    1   632   632   632 pts/0      632 Ssl+     0   0:50 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.</span><br><span class="line">    1   810   810   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 6bb16a0dfa1b006c0c241d54f84c8fc17d719ca791f482ede021e0a9ae118eec -address /run/containerd/con</span><br><span class="line">  810   860   860   860 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  810   928   928   928 ?           -1 Ssl      0   0:01  \_ /usr/local/bin/kube-proxy --config=/var/lib/kube-proxy/config.conf --hostname-override=kind-control-plane</span><br><span class="line">  928   986   983   928 ?           -1 Z        0   0:01      \_ [iptables-nft-sa] &lt;defunct&gt;</span><br><span class="line">    1   837   837   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id e17005058a2afb322c2c9179d5468b65be0bd8c2a24e3774373988413c93a7ec -address /run/containerd/con</span><br><span class="line">  837   877   877   877 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line">  837   935   935   935 ?           -1 Ssl      0   0:00  \_ /bin/kindnetd</span><br><span class="line">  935   994   992   935 ?           -1 Z        0   0:00      \_ [iptables-nft-sa] &lt;defunct&gt;</span><br><span class="line">    1  1108  1108   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 905595d932140fd9406ae9487893d6e6351b15f33ab39528a4da00650df485ec -address /run/containerd/con</span><br><span class="line"> 1108  1131  1131  1131 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line"> 1108  1160  1160  1160 ?           -1 Ssl      0   0:03  \_ local-path-provisioner --debug start --helper-image k8s.gcr.io/debian-base:v2.0.0 --config /etc/config/config.json</span><br><span class="line">    1  1244  1244   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 410e09a86cb001d1b40378e153406d7a1c85c9f04f3e68ded23dc19c1fe50940 -address /run/containerd/con</span><br><span class="line"> 1244  1305  1305  1305 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line"> 1244  1380  1380  1380 ?           -1 Ssl      0   0:08  \_ /coredns -conf /etc/coredns/Corefile</span><br><span class="line">    1  1252  1252   113 ?           -1 Sl       0   0:00 /usr/local/bin/containerd-shim-runc-v2 -namespace k8s.io -id 0fdc07bfbd62610b783122e3d8dca8f5b1ad2a1aa07f2bb7b1194df280116957 -address /run/containerd/con</span><br><span class="line"> 1252  1294  1294  1294 ?           -1 Ss       0   0:00  \_ /pause</span><br><span class="line"> 1252  1374  1374  1374 ?           -1 Ssl      0   0:08  \_ /coredns -conf /etc/coredns/Corefile</span><br></pre></td></tr></table></figure>
+
+<p>那么从这里看就可以看出来KIND的构建方法了，在kind-control-plane这个容器中运行由kubelet程序用来支持一个运行节点，控制节点所需要的组件则是由内置的一个containerd来运行的，使用<code>ctr -n k8s.io containers ls</code>命令可以更加直观的看到。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">root@kind-control-plane:/kind# ctr -n k8s.io containers ls</span><br><span class="line">CONTAINER                                                           IMAGE                                               RUNTIME</span><br><span class="line">00d79d58327ca059b96cdd9c651d12853a2e2622e65472230414dc15d65821bd    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">07dd95f8b88f11974154232d894e1ac9be76dec8c7e88c74a5d7f611d4bf94a0    k8s.gcr.io/kube-controller-manager:v1.18.2          io.containerd.runc.v2</span><br><span class="line">0fdc07bfbd62610b783122e3d8dca8f5b1ad2a1aa07f2bb7b1194df280116957    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">410e09a86cb001d1b40378e153406d7a1c85c9f04f3e68ded23dc19c1fe50940    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">470d408aa74f66355ab637295a8e4777ec6775f84aba75a17efa861e5ede6470    k8s.gcr.io/kube-scheduler:v1.18.2                   io.containerd.runc.v2</span><br><span class="line">482207771a3b7eba237dc037dba4f5717e54842f7bf38d367f391030a9091f38    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">5101a9a24071e5c10d052d01918361dee8a97a2822b4bb82bc772460ce0045a2    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">652f25e9876c8efaae6b21f7289bfd88372ce9ec4ae6593f9e1c81bb3f513ddd    k8s.gcr.io/etcd:3.4.3-0                             io.containerd.runc.v2</span><br><span class="line">6bb16a0dfa1b006c0c241d54f84c8fc17d719ca791f482ede021e0a9ae118eec    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">7f9f6cd14c83c08f5906a280f7fc5b178e766c0e4bb137a316d35c61f05c5031    k8s.gcr.io/kube-apiserver:v1.18.2                   io.containerd.runc.v2</span><br><span class="line">905595d932140fd9406ae9487893d6e6351b15f33ab39528a4da00650df485ec    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">c90fa3e64763263042ac6f29657e3a76de67a90308b9c7cf3a5cefbeda6788c8    k8s.gcr.io/kube-proxy:v1.18.2                       io.containerd.runc.v2</span><br><span class="line">d0c86ec34d96251e5bc4992183b21021c803e033463f581de9adf3bdadd4b4c8    k8s.gcr.io/coredns:1.6.7                            io.containerd.runc.v2</span><br><span class="line">d43682f949020c15ff5a7997bfbd872fd6959949962e57e9ccfaf4633ae77039    k8s.gcr.io/coredns:1.6.7                            io.containerd.runc.v2</span><br><span class="line">dbabbb66c17ba1317706b3e13a473b7e52653d6097f1fb4e71ca3aca51c17e37    docker.io/rancher/local-path-provisioner:v0.0.12    io.containerd.runc.v2</span><br><span class="line">e17005058a2afb322c2c9179d5468b65be0bd8c2a24e3774373988413c93a7ec    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">e68a9f43205edd282548f6db0942c0c0b503a66894b8bf5e3d7d1b7e5be8a71d    k8s.gcr.io/pause:3.2                                io.containerd.runc.v2</span><br><span class="line">f49eaf48b0b9ac0ef29d5dc6a8c3b8e26c9dd9a681715e8f431ad6ec4d452dbd    docker.io/kindest/kindnetd:0.5.4                    io.containerd.runc.v2</span><br></pre></td></tr></table></figure>
+
+<p>这里还有一个疑问，大部分容器引擎在Nesting运行的时候是需要做一定设置的，然而在containerd这里我没有看到额外的设置。是containerd原生就支持nesting运行还是说这是因为vctl的特殊运行方式（指一个容器一个VM）就不得而知了，未来有空会看看原理。</p>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://barrydeng.github.io">Barry Deng</a>
+            <p>原文链接：<a href="http://barrydeng.github.io/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/">http://barrydeng.github.io/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/</a>
+            <p>发表日期：<a href="http://barrydeng.github.io/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/">September 17th 2020, 6:03:39 pm</a>
+            <p>更新日期：<a href="http://barrydeng.github.io/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/">September 17th 2020, 6:07:34 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-nc/4.0/">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/12/06/onos-sample-apps/" title= "ONOS官方示例应用解析">
+                    <div class="prevTitle">ONOS官方示例应用解析</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+    <div id="lv-container" data-id="city" data-uid= MTAyMC80NjQzOS8yMjk1MA==>
+        <script type="text/javascript">
+            (function (d, s) {
+                var j, e = d.getElementsByTagName(s)[0];
+                if (typeof LivereTower === 'function') { return; }
+                j = d.createElement(s);
+                j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+                j.async = true;
+
+                e.parentNode.insertBefore(j, e);
+            })(document, 'script');
+        </script>
+        <noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
+    </div>
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:jianyong596@hotmail.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/BarryDeng" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/mmqrcode.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8vctl"><span class="toc-number">1.</span> <span class="toc-text">使用vctl</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4"><span class="toc-number">2.</span> <span class="toc-text">创建k8s集群</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9C%8B%E7%9C%8B%E5%8E%9F%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">看看原理</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 10
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/17</span><a class="archive-post-title" href= "/2020/09/17/%E4%BD%BF%E7%94%A8vctl%E5%88%9B%E5%BB%BAk8s%E9%9B%86%E7%BE%A4/" >使用VMware vctl工具创建K8s集群</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/OpenFlow/" >OpenFlow 协议学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/lxd%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" >Lxd 源码解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Suricata/" >Suricata 学习</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/Cisco%20IOS/" >Cisco IOS命令参考</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/fwd%E5%BA%94%E7%94%A8%E8%A7%A3%E6%9E%90/" >org.onosproject.fwd 应用解析</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">09/02</span><a class="archive-post-title" href= "/2019/09/02/hello-world/" >Hello World</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">08/27</span><a class="archive-post-title" href= "/2019/08/27/DPDK%E9%AA%8C%E8%AF%81%E8%AF%95%E9%AA%8C/" >DPDK Pktgen和Testpmd验证试验</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/mininet/" >mininet 学习</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> Invalid date </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">Invalid date</span><a class="archive-post-title" href= "/2019/12/06/onos-sample-apps/" >ONOS官方示例应用解析</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Barry Deng"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
